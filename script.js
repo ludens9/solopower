@@ -361,6 +361,12 @@ function setupMobileTouchInteraction(card, img) {
     img.removeEventListener('touchend', img._mobileTouchEnd);
     img.removeEventListener('touchmove', img._mobileTouchMove);
     
+    // 컬러 이미지 프리로딩 (즉시 변경을 위해)
+    if (img.dataset.hoverSrc && !img._preloadedImage) {
+        img._preloadedImage = new Image();
+        img._preloadedImage.src = img.dataset.hoverSrc;
+    }
+    
     // 터치 상태 추적 변수
     img._touchActive = false;
     img._touchStartY = 0;
@@ -393,10 +399,16 @@ function setupMobileTouchInteraction(card, img) {
         e.stopPropagation();
         img._touchActive = false;
         
-        // 릴리즈 즉시 스케일링 + 컬러 변경 (0.1초 안에 완료)
-        img.style.transition = 'all 0.1s ease';
-        img.src = img.dataset.hoverSrc;
-        img.style.transform = 'scale(1.05)';
+        // 릴리즈 즉시 컬러변경 + 스케일링 동시 실행 (0.1초 안에 완료)
+        img.style.transition = 'transform 0.1s ease';
+        
+        // 컬러 변경과 스케일링을 동시에 실행하기 위해 requestAnimationFrame 사용
+        requestAnimationFrame(() => {
+            // 이미지 변경 (즉시)
+            img.src = img.dataset.hoverSrc;
+            // 스케일링 시작 (0.1초 애니메이션)
+            img.style.transform = 'scale(1.05)';
+        });
         
         // 0.1초 후 상태 고정, 0.5초 후 다음 질문으로 이동
         setTimeout(() => {
