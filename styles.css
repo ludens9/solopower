@@ -262,15 +262,30 @@ body {
     margin-bottom: 60px;
 }
 
-/* 모바일에서 헤더 수정 - 상단 네비게이션 복원 */
+/* 모바일에서 헤더 수정 - 상단 네비게이션 복원 및 고정 */
 @media (max-width: 767px) {
     .question-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
         justify-content: space-between;
-        margin-bottom: 20px;
+        margin-bottom: 0;
+        padding: 20px;
+        background: #ffffff;
+        z-index: 1000;
+        box-sizing: border-box;
     }
     
     .btn-back, .btn-home {
         display: block;
+    }
+    
+    /* 고정 헤더로 인한 콘텐츠 상단 여백 추가 */
+    #questions-screen .question-content,
+    #result-screen .result-content {
+        padding-top: 80px;
     }
 }
 

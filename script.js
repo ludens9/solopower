@@ -301,13 +301,8 @@ function isTouchDevice() {
     return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
 }
 
-// 이미지 호버 효과 설정
+// 이미지 호버 및 터치 효과 설정
 function setupImageHoverEffects() {
-    // 모바일/터치 디바이스에서는 호버 효과 비활성화
-    if (isTouchDevice()) {
-        return;
-    }
-    
     const optionCards = document.querySelectorAll('.option-card');
     
     optionCards.forEach(card => {
@@ -317,29 +312,63 @@ function setupImageHoverEffects() {
         // 기존 이벤트 리스너 제거 (중복 방지)
         card.removeEventListener('mouseenter', card._hoverEnter);
         card.removeEventListener('mouseleave', card._hoverLeave);
+        card.removeEventListener('touchstart', card._touchStart);
+        card.removeEventListener('touchend', card._touchEnd);
         
-        // 새로운 이벤트 리스너 함수 생성
+        // 호버 효과 함수
         card._hoverEnter = () => {
             if (img.dataset.hoverSrc && img.dataset.hoverSrc !== img.src) {
                 img.src = img.dataset.hoverSrc;
+                img.style.transform = 'scale(1.05)';
             }
         };
         
         card._hoverLeave = () => {
             if (img.dataset.originalSrc && img.dataset.originalSrc !== img.src) {
                 img.src = img.dataset.originalSrc;
+                img.style.transform = 'scale(1)';
             }
         };
         
-        // 호버 시작 (데스크탑만)
-        card.addEventListener('mouseenter', card._hoverEnter);
+        // 터치 효과 함수 (모바일용)
+        card._touchStart = (e) => {
+            if (isTouchDevice()) {
+                e.preventDefault();
+                img.style.transition = 'all 0.5s ease';
+                if (img.dataset.hoverSrc && img.dataset.hoverSrc !== img.src) {
+                    img.src = img.dataset.hoverSrc;
+                    img.style.transform = 'scale(1.05)';
+                }
+            }
+        };
         
-        // 호버 종료 (데스크탑만)
-        card.addEventListener('mouseleave', card._hoverLeave);
+        card._touchEnd = (e) => {
+            if (isTouchDevice()) {
+                e.preventDefault();
+                // 0.5초 후 다음 페이지로 이동
+                setTimeout(() => {
+                    const options = card.parentElement.querySelectorAll('.option-card');
+                    const side = card === options[0] ? 'left' : 'right';
+                    selectOption(side);
+                }, 500);
+            }
+        };
         
-        // 현재 이미 호버 상태라면 즉시 호버 효과 적용
-        if (card.matches(':hover')) {
-            card._hoverEnter();
+        if (isTouchDevice()) {
+            // 모바일에서는 터치 이벤트만 사용하고 onclick 비활성화
+            card.style.pointerEvents = 'auto';
+            card.onclick = null;
+            card.addEventListener('touchstart', card._touchStart, { passive: false });
+            card.addEventListener('touchend', card._touchEnd, { passive: false });
+        } else {
+            // 데스크탑에서는 호버 이벤트 사용
+            card.addEventListener('mouseenter', card._hoverEnter);
+            card.addEventListener('mouseleave', card._hoverLeave);
+            
+            // 현재 이미 호버 상태라면 즉시 호버 효과 적용
+            if (card.matches(':hover')) {
+                card._hoverEnter();
+            }
         }
     });
 }
