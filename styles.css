@@ -13,10 +13,21 @@ body {
     min-height: 100vh;
 }
 
-/* 모바일에서 폰트 강제 적용 */
+/* 모바일에서 폰트 강제 적용 및 font-weight 매핑 */
 @media (max-width: 767px) {
     * {
         font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    }
+    
+    /* font-weight 매핑 개선 */
+    [style*="font-weight: 600"], .font-semibold {
+        font-weight: 600 !important;
+        font-variation-settings: 'wght' 600;
+    }
+    
+    [style*="font-weight: 800"], .font-extrabold {
+        font-weight: 800 !important;
+        font-variation-settings: 'wght' 800;
     }
 }
 
@@ -29,6 +40,13 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: center;
+}
+
+/* 모바일에서 좌우 패딩 20 적용 */
+@media (max-width: 767px) {
+    .container {
+        padding: 0 20px;
+    }
 }
 
 @media (min-width: 768px) {
@@ -75,7 +93,7 @@ body {
 @media (max-width: 767px) {
     .main-content {
         padding: 60px 0 40px 0;
-        gap: 20px;
+        gap: 10px;
         justify-content: center;
     }
 }
@@ -244,60 +262,21 @@ body {
     margin-bottom: 60px;
 }
 
-/* 모바일에서 헤더 수정 - 타이틀만 남기고 버튼 숨김 */
+/* 모바일에서 헤더 수정 - 상단 네비게이션 복원 */
 @media (max-width: 767px) {
     .question-header {
-        justify-content: center;
-        margin-bottom: 40px;
+        justify-content: space-between;
+        margin-bottom: 20px;
     }
     
     .btn-back, .btn-home {
-        display: none;
+        display: block;
     }
 }
 
-/* 모바일 하단 고정 버튼 */
+/* 모바일 하단 고정 버튼 - 제거됨 */
 .mobile-bottom-buttons {
     display: none;
-}
-
-@media (max-width: 767px) {
-    .mobile-bottom-buttons {
-        display: flex;
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        width: 100%;
-        padding: 20px;
-        gap: 10px;
-        background: #ffffff;
-        z-index: 9999;
-        box-sizing: border-box;
-    }
-    
-    .mobile-btn {
-        flex: 1;
-        padding: 16px;
-        background: #000000;
-        color: #ffffff;
-        border: none;
-        border-radius: 12px;
-        cursor: pointer;
-        font-family: inherit;
-    }
-    
-    .mobile-btn h3 {
-        font-size: 16px;
-        font-weight: 800;
-        line-height: 1.6;
-        margin: 0;
-        color: #ffffff;
-    }
-    
-    .mobile-btn:active {
-        transform: scale(0.95);
-    }
 }
 
 .btn-back, .btn-home {
@@ -336,18 +315,18 @@ body {
 /* 모바일에서 질문 콘텐츠 간격 조정 */
 @media (max-width: 767px) {
     .question-content {
-        padding: 10px 0 100px 0;
+        padding: 10px 0 20px 0;
         min-height: calc(100vh - 100px);
         justify-content: center;
     }
     
     .question-title {
-        margin: 0 0 20px 0;
+        margin: 0 0 10px 0;
         font-size: 28px;
     }
     
     .question-number {
-        margin: 0 0 10px 0;
+        margin: 0 0 5px 0;
     }
 }
 
@@ -413,7 +392,7 @@ body {
 /* 모바일에서 텍스트-이미지 간격 조정 */
 @media (max-width: 767px) {
     .option-image {
-        margin-top: 10px;
+        margin-top: 5px;
     }
 }
 
@@ -445,6 +424,13 @@ body {
     text-align: center;
 }
 
+/* 모바일에서 옵션 요소 간격 조정 */
+@media (max-width: 767px) {
+    .option-bullet {
+        margin: 0 0 4px 0;
+    }
+}
+
 .option-text {
     font-size: 14px;
     font-weight: 600;
@@ -466,6 +452,17 @@ body {
 .loading-content {
     text-align: center;
     padding: 60px 0;
+}
+
+/* 모바일에서 로딩 화면 수직 가운데 정렬 */
+@media (max-width: 767px) {
+    #loading-screen .container {
+        justify-content: center;
+    }
+    
+    .loading-content {
+        padding: 0;
+    }
 }
 
 .loading-animation {
@@ -556,6 +553,13 @@ body {
     letter-spacing: -0.01em;
 }
 
+/* 모바일에서 결과 타이틀 행간 140% */
+@media (max-width: 767px) {
+    .result-title {
+        line-height: 1.4;
+    }
+}
+
 .result-character {
     margin-bottom: 24px;
     position: relative;
@@ -583,43 +587,41 @@ body {
 }
 
 
-/* 모바일 결과 페이지 버튼 박스 */
+/* 모바일 결과 페이지 버튼 박스 - 제거됨 */
 .mobile-result-button-box {
     display: none;
 }
 
+/* 모바일 액션 버튼 */
+.mobile-action-buttons {
+    display: none;
+}
+
 @media (max-width: 767px) {
-    .mobile-result-button-box {
+    .mobile-action-buttons {
         display: flex;
         width: 100%;
-        padding: 0;
-        gap: 10px;
-        background: #ffffff;
-        border-radius: 0;
-        margin-bottom: 10px;
+        gap: 6px;
+        margin-bottom: 24px;
     }
     
-    .mobile-result-btn {
+    .mobile-action-btn {
         flex: 1;
-        padding: 16px;
+        padding: 16px 20px;
         background: #000000;
         color: #ffffff;
         border: none;
-        border-radius: 12px;
-        cursor: pointer;
-        font-family: inherit;
-    }
-    
-    .mobile-result-btn h3 {
+        border-radius: 50px;
         font-size: 16px;
-        font-weight: 800;
-        line-height: 1.6;
-        margin: 0;
-        color: #ffffff;
+        font-weight: 600;
+        font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        cursor: pointer;
+        transition: all 0.2s ease;
     }
     
-    .mobile-result-btn:active {
+    .mobile-action-btn:active {
         transform: scale(0.95);
+        background: #333333;
     }
 }
 
