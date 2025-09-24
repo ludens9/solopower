@@ -13,6 +13,13 @@ body {
     min-height: 100vh;
 }
 
+/* 모바일에서 폰트 강제 적용 */
+@media (max-width: 767px) {
+    * {
+        font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    }
+}
+
 .container {
     max-width: 100%;
     width: 100%;
@@ -62,6 +69,15 @@ body {
     gap: 4px;
     min-height: 100vh;
     justify-content: space-between;
+}
+
+/* 모바일에서 메인 화면 간격 조정 */
+@media (max-width: 767px) {
+    .main-content {
+        padding: 60px 0 40px 0;
+        gap: 20px;
+        justify-content: center;
+    }
 }
 
 
@@ -228,6 +244,62 @@ body {
     margin-bottom: 60px;
 }
 
+/* 모바일에서 헤더 수정 - 타이틀만 남기고 버튼 숨김 */
+@media (max-width: 767px) {
+    .question-header {
+        justify-content: center;
+        margin-bottom: 40px;
+    }
+    
+    .btn-back, .btn-home {
+        display: none;
+    }
+}
+
+/* 모바일 하단 고정 버튼 */
+.mobile-bottom-buttons {
+    display: none;
+}
+
+@media (max-width: 767px) {
+    .mobile-bottom-buttons {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        padding: 20px;
+        gap: 10px;
+        background: #ffffff;
+        z-index: 9999;
+        box-sizing: border-box;
+    }
+    
+    .mobile-btn {
+        flex: 1;
+        padding: 16px;
+        background: #000000;
+        color: #ffffff;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        font-family: inherit;
+    }
+    
+    .mobile-btn h3 {
+        font-size: 16px;
+        font-weight: 800;
+        line-height: 1.6;
+        margin: 0;
+        color: #ffffff;
+    }
+    
+    .mobile-btn:active {
+        transform: scale(0.95);
+    }
+}
+
 .btn-back, .btn-home {
     background: #000000;
     color: #ffffff;
@@ -259,6 +331,24 @@ body {
     justify-content: flex-start;
     min-height: calc(100vh - 140px);
     max-width: 100%;
+}
+
+/* 모바일에서 질문 콘텐츠 간격 조정 */
+@media (max-width: 767px) {
+    .question-content {
+        padding: 10px 0 100px 0;
+        min-height: calc(100vh - 100px);
+        justify-content: center;
+    }
+    
+    .question-title {
+        margin: 0 0 20px 0;
+        font-size: 28px;
+    }
+    
+    .question-number {
+        margin: 0 0 10px 0;
+    }
 }
 
 .question-number {
@@ -320,12 +410,30 @@ body {
     transition: all 0.1s ease;
 }
 
+/* 모바일에서 텍스트-이미지 간격 조정 */
+@media (max-width: 767px) {
+    .option-image {
+        margin-top: 10px;
+    }
+}
+
 .option-card:hover .option-image {
     transform: scale(1.05);
 }
 
 .option-card:active .option-image {
     transform: scale(1.05);
+}
+
+/* 모바일에서 호버 효과 제거 */
+@media (max-width: 767px) {
+    .option-card:hover .option-image {
+        transform: none;
+    }
+    
+    .option-card:active .option-image {
+        transform: none;
+    }
 }
 
 .option-bullet {
@@ -474,6 +582,46 @@ body {
     transform: scale(0.95);
 }
 
+
+/* 모바일 결과 페이지 버튼 박스 */
+.mobile-result-button-box {
+    display: none;
+}
+
+@media (max-width: 767px) {
+    .mobile-result-button-box {
+        display: flex;
+        width: 100%;
+        padding: 0;
+        gap: 10px;
+        background: #ffffff;
+        border-radius: 0;
+        margin-bottom: 10px;
+    }
+    
+    .mobile-result-btn {
+        flex: 1;
+        padding: 16px;
+        background: #000000;
+        color: #ffffff;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        font-family: inherit;
+    }
+    
+    .mobile-result-btn h3 {
+        font-size: 16px;
+        font-weight: 800;
+        line-height: 1.6;
+        margin: 0;
+        color: #ffffff;
+    }
+    
+    .mobile-result-btn:active {
+        transform: scale(0.95);
+    }
+}
 
 .result-info-box {
     background: #FBFBFB;

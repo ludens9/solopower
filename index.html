@@ -135,6 +135,16 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- 모바일 하단 고정 버튼 -->
+            <div class="mobile-bottom-buttons">
+                <button class="mobile-btn mobile-btn-back" onclick="goBack()">
+                    <h3>뒤로</h3>
+                </button>
+                <button class="mobile-btn mobile-btn-home" onclick="goHome()">
+                    <h3>홈</h3>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -169,6 +179,16 @@
                 <!-- b. 캐릭터 이미지 -->
                 <div class="result-character" id="characterContainer">
                     <img src="" alt="자취 유형별 캐릭터 이미지" class="character-image" id="characterImage" onclick="onCharacterClick()">
+                </div>
+                
+                <!-- 모바일 버튼 박스 -->
+                <div class="mobile-result-button-box">
+                    <button class="mobile-result-btn mobile-result-btn-restart" onclick="restartTest()">
+                        <h3>다시하기</h3>
+                    </button>
+                    <button class="mobile-result-btn mobile-result-btn-share" onclick="shareResult()">
+                        <h3>공유하기</h3>
+                    </button>
                 </div>
                 
                 <!-- c. 점수 박스 -->

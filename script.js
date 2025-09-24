@@ -296,8 +296,18 @@ function goHome() {
     showScreen('main-screen');
 }
 
+// 모바일/터치 디바이스 감지
+function isTouchDevice() {
+    return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
+}
+
 // 이미지 호버 효과 설정
 function setupImageHoverEffects() {
+    // 모바일/터치 디바이스에서는 호버 효과 비활성화
+    if (isTouchDevice()) {
+        return;
+    }
+    
     const optionCards = document.querySelectorAll('.option-card');
     
     optionCards.forEach(card => {
@@ -365,18 +375,20 @@ function showQuestion() {
     // 호버 이벤트 추가
     setupImageHoverEffects();
     
-    // 현재 호버된 카드가 있다면 강제로 호버 효과 적용
-    setTimeout(() => {
-        const optionCards = document.querySelectorAll('.option-card');
-        optionCards.forEach(card => {
-            if (card.matches(':hover')) {
-                const img = card.querySelector('.option-image');
-                if (img && img.dataset.hoverSrc) {
-                    img.src = img.dataset.hoverSrc;
+    // 현재 호버된 카드가 있다면 강제로 호버 효과 적용 (데스크탑만)
+    if (!isTouchDevice()) {
+        setTimeout(() => {
+            const optionCards = document.querySelectorAll('.option-card');
+            optionCards.forEach(card => {
+                if (card.matches(':hover')) {
+                    const img = card.querySelector('.option-image');
+                    if (img && img.dataset.hoverSrc) {
+                        img.src = img.dataset.hoverSrc;
+                    }
                 }
-            }
-        });
-    }, 50); // 이미지 로드 후 약간의 지연
+            });
+        }, 50); // 이미지 로드 후 약간의 지연
+    }
 }
 
 // 옵션 선택
