@@ -800,28 +800,67 @@ function shareResult() {
         }
     }
     
+    const title = '나의 자취력 점수는?';
     const text = `나 ${score}점 나왔어! 너는 몇점이야?`;
     const url = window.location.origin + window.location.pathname;
     
+    // 카카오톡 공유 감지 및 처리
+    if (isKakaoTalk()) {
+        shareToKakaoTalk(title, text, url);
+        return;
+    }
+    
+    // 네이티브 공유 API 사용
     if (navigator.share) {
-        navigator.share({
-            title: '나의 자취력 점수는?',
-            text: text,
+        // 더 안정적인 공유 데이터 구성
+        const shareData = {
+            title: title,
+            text: `${text}\n\n${url}`,
             url: url
-        }).catch((error) => {
-            console.log('공유 실패:', error);
+        };
+        
+        // 공유 전에 메타 태그 강제 업데이트
+        forceUpdateMetaTags(title, text, url);
+        
+        navigator.share(shareData).catch((error) => {
+            console.log('네이티브 공유 실패:', error);
             // 공유 실패 시 클립보드 복사로 폴백
-            copyToClipboard(url, text);
+            copyToClipboard(url, text, title);
         });
     } else {
         // 클립보드에 복사
-        copyToClipboard(url, text);
+        copyToClipboard(url, text, title);
+    }
+}
+
+// 카카오톡 앱 감지
+function isKakaoTalk() {
+    const userAgent = navigator.userAgent.toLowerCase();
+    return userAgent.includes('kakaotalk') || userAgent.includes('kakao');
+}
+
+// 카카오톡 공유 처리
+function shareToKakaoTalk(title, text, url) {
+    // 카카오톡에서는 URL이 자동으로 링크로 변환되므로 텍스트에 포함
+    const kakaoText = `${title}\n\n${text}\n\n${url}`;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: title,
+            text: kakaoText,
+            url: url
+        }).catch((error) => {
+            console.log('카카오톡 공유 실패:', error);
+            copyToClipboard(url, text, title);
+        });
+    } else {
+        copyToClipboard(url, text, title);
     }
 }
 
 // 클립보드 복사 함수
-function copyToClipboard(url, text) {
-    const shareText = `나의 자취력 점수는?\n${url}\n${text}`;
+function copyToClipboard(url, text, title = '나의 자취력 점수는?') {
+    const shareText = `${title}\n\n${text}\n\n${url}`;
     
     if (navigator.clipboard && window.isSecureContext) {
         navigator.clipboard.writeText(shareText).then(() => {
@@ -881,6 +920,10 @@ function updateShareMetaTags(result) {
     updateMetaTag('name', 'twitter:title', dynamicTitle);
     updateMetaTag('name', 'twitter:description', dynamicDescription);
     
+    // 카카오톡 호환성을 위한 추가 메타 태그
+    updateMetaTag('name', 'image', 'https://ludens9.github.io/solopower/images/og-image.png');
+    updateMetaTag('property', 'og:image:url', 'https://ludens9.github.io/solopower/images/og-image.png');
+    
     // 페이지 제목도 업데이트
     document.title = dynamicTitle;
 }
@@ -894,6 +937,28 @@ function updateMetaTag(attribute, name, content) {
         document.head.appendChild(metaTag);
     }
     metaTag.setAttribute('content', content);
+}
+
+// 공유 전 메타 태그 강제 업데이트
+function forceUpdateMetaTags(title, text, url) {
+    // Open Graph 메타 태그 즉시 업데이트
+    updateMetaTag('property', 'og:title', title);
+    updateMetaTag('property', 'og:description', text);
+    updateMetaTag('property', 'og:url', url);
+    
+    // Twitter Cards 업데이트
+    updateMetaTag('name', 'twitter:title', title);
+    updateMetaTag('name', 'twitter:description', text);
+    
+    // 페이지 제목 업데이트
+    document.title = title;
+    
+    // 추가 안정성을 위한 메타 태그들
+    updateMetaTag('property', 'og:image', 'https://ludens9.github.io/solopower/images/og-image.png');
+    updateMetaTag('name', 'twitter:image', 'https://ludens9.github.io/solopower/images/og-image.png');
+    updateMetaTag('name', 'image', 'https://ludens9.github.io/solopower/images/og-image.png');
+    
+    console.log('메타 태그 강제 업데이트 완료:', { title, text, url });
 }
 
 // 다시하기
