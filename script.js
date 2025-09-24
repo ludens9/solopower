@@ -312,65 +312,84 @@ function setupImageHoverEffects() {
         // 기존 이벤트 리스너 제거 (중복 방지)
         card.removeEventListener('mouseenter', card._hoverEnter);
         card.removeEventListener('mouseleave', card._hoverLeave);
-        img.removeEventListener('touchstart', img._touchStart);
-        img.removeEventListener('touchend', img._touchEnd);
-        
-        // 호버 효과 함수
-        card._hoverEnter = () => {
-            if (img.dataset.hoverSrc && img.dataset.hoverSrc !== img.src) {
-                img.src = img.dataset.hoverSrc;
-                img.style.transform = 'scale(1.05)';
-            }
-        };
-        
-        card._hoverLeave = () => {
-            if (img.dataset.originalSrc && img.dataset.originalSrc !== img.src) {
-                img.src = img.dataset.originalSrc;
-                img.style.transform = 'scale(1)';
-            }
-        };
-        
-        // 터치 효과 함수 (모바일용 - 이미지에만 적용)
-        img._touchStart = (e) => {
-            if (isTouchDevice()) {
-                e.stopPropagation();
-                img.style.transition = 'all 0.5s ease';
-                if (img.dataset.hoverSrc && img.dataset.hoverSrc !== img.src) {
-                    img.src = img.dataset.hoverSrc;
-                    img.style.transform = 'scale(1.05)';
-                }
-            }
-        };
-        
-        img._touchEnd = (e) => {
-            if (isTouchDevice()) {
-                e.stopPropagation();
-                e.preventDefault();
-                // 0.5초 후 다음 페이지로 이동
-                setTimeout(() => {
-                    const options = card.parentElement.querySelectorAll('.option-card');
-                    const side = card === options[0] ? 'left' : 'right';
-                    selectOption(side);
-                }, 500);
-            }
-        };
         
         if (isTouchDevice()) {
-            // 모바일에서는 이미지에만 터치 이벤트 적용하고 카드의 onclick 비활성화
-            card.onclick = null;
-            card.style.pointerEvents = 'none'; // 카드 전체 클릭 비활성화
-            img.style.pointerEvents = 'auto';  // 이미지만 클릭 가능
-            img.addEventListener('touchstart', img._touchStart, { passive: false });
-            img.addEventListener('touchend', img._touchEnd, { passive: false });
+            // 모바일: 터치 인터랙션 설정
+            setupMobileTouchInteraction(card, img);
         } else {
-            // 데스크탑에서는 호버 이벤트 사용
-            card.addEventListener('mouseenter', card._hoverEnter);
-            card.addEventListener('mouseleave', card._hoverLeave);
-            
-            // 현재 이미 호버 상태라면 즉시 호버 효과 적용
-            if (card.matches(':hover')) {
-                card._hoverEnter();
-            }
+            // 데스크탑: 호버 인터랙션 설정
+            setupDesktopHoverInteraction(card, img);
+        }
+    });
+}
+
+// 데스크탑 호버 인터랙션 설정
+function setupDesktopHoverInteraction(card, img) {
+    // 호버 효과 함수
+    card._hoverEnter = () => {
+        if (img.dataset.hoverSrc && img.dataset.hoverSrc !== img.src) {
+            img.src = img.dataset.hoverSrc;
+            img.style.transform = 'scale(1.05)';
+        }
+    };
+    
+    card._hoverLeave = () => {
+        if (img.dataset.originalSrc && img.dataset.originalSrc !== img.src) {
+            img.src = img.dataset.originalSrc;
+            img.style.transform = 'scale(1)';
+        }
+    };
+    
+    card.addEventListener('mouseenter', card._hoverEnter);
+    card.addEventListener('mouseleave', card._hoverLeave);
+    
+    // 현재 이미 호버 상태라면 즉시 호버 효과 적용
+    if (card.matches(':hover')) {
+        card._hoverEnter();
+    }
+}
+
+// 모바일 터치 인터랙션 설정 (새로 구현)
+function setupMobileTouchInteraction(card, img) {
+    // 카드의 기본 클릭 이벤트 비활성화
+    card.onclick = null;
+    card.style.pointerEvents = 'none';
+    img.style.pointerEvents = 'auto';
+    
+    // 기존 터치 이벤트 제거
+    img.removeEventListener('touchend', img._mobileTouchEnd);
+    
+    // 새로운 터치 릴리즈 이벤트
+    img._mobileTouchEnd = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // 릴리즈 즉시 스케일링 + 컬러 변경
+        img.style.transition = 'all 0.3s ease';
+        img.src = img.dataset.hoverSrc;
+        img.style.transform = 'scale(1.05)';
+        
+        // 0.5초 후 다음 질문으로 이동
+        setTimeout(() => {
+            const options = card.parentElement.querySelectorAll('.option-card');
+            const side = card === options[0] ? 'left' : 'right';
+            selectOption(side);
+        }, 500);
+    };
+    
+    img.addEventListener('touchend', img._mobileTouchEnd, { passive: false });
+}
+
+// 이미지 영역 리셋 함수
+function resetImageAreas() {
+    if (!isTouchDevice()) return;
+    
+    const optionImages = document.querySelectorAll('.option-image');
+    optionImages.forEach(img => {
+        if (img.dataset.originalSrc) {
+            img.style.transition = 'none';
+            img.src = img.dataset.originalSrc;
+            img.style.transform = 'scale(1)';
         }
     });
 }
@@ -378,6 +397,9 @@ function setupImageHoverEffects() {
 
 // 질문 표시
 function showQuestion() {
+    // 이미지 영역 리셋 (모바일에서 이전 상태 초기화)
+    resetImageAreas();
+    
     // MD 파일에서 로드된 데이터가 있으면 사용, 없으면 기본 데이터 사용
     const questionData = window.questions && window.questions.length > 0 ? window.questions : questions;
     const question = questionData[currentQuestion];
