@@ -6,7 +6,7 @@
     
     <!-- 메인 페이지 -->
     <url>
-        <loc>https://solopower.netlify.app/</loc>
+        <loc>https://ludens9.github.io/solopower/</loc>
         <lastmod>2025-01-27</lastmod>
         <changefreq>weekly</changefreq>
         <priority>1.0</priority>
@@ -14,7 +14,7 @@
     
     <!-- 인덱스 페이지 -->
     <url>
-        <loc>https://solopower.netlify.app/index.html</loc>
+        <loc>https://ludens9.github.io/solopower/index.html</loc>
         <lastmod>2025-01-27</lastmod>
         <changefreq>weekly</changefreq>
         <priority>1.0</priority>

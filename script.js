@@ -711,6 +711,9 @@ function showResult(result) {
     // 현재 결과를 전역 변수에 저장 (공유 기능에서 사용)
     currentResult = result;
     
+    // 공유용 메타 태그 업데이트
+    updateShareMetaTags(result);
+    
     // 타이틀 설정 (당신은 -> 설명 -> 동물로 3줄 구조)
     const titleParts = result.title.match(/^당신은\s(.+)\s([가-힣]+)$/);
     let formattedTitle;
@@ -797,21 +800,100 @@ function shareResult() {
         }
     }
     
-    const text = `난 "${score}점" 나왔는데 넌 몇점인지 알려줘!!`;
-    const url = window.location.href;
+    const text = `나 ${score}점 나왔어! 너는 몇점이야?`;
+    const url = window.location.origin + window.location.pathname;
     
     if (navigator.share) {
         navigator.share({
-            title: '혼자살기 내 점수는?',
+            title: '나의 자취력 점수는?',
             text: text,
             url: url
+        }).catch((error) => {
+            console.log('공유 실패:', error);
+            // 공유 실패 시 클립보드 복사로 폴백
+            copyToClipboard(url, text);
         });
     } else {
         // 클립보드에 복사
-        navigator.clipboard.writeText(`혼자살기 내 점수는?\n${url}\n${text}`).then(() => {
-            alert('결과가 클립보드에 복사되었습니다!');
-        });
+        copyToClipboard(url, text);
     }
+}
+
+// 클립보드 복사 함수
+function copyToClipboard(url, text) {
+    const shareText = `나의 자취력 점수는?\n${url}\n${text}`;
+    
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(shareText).then(() => {
+            alert('결과가 클립보드에 복사되었습니다!');
+        }).catch((error) => {
+            console.log('클립보드 복사 실패:', error);
+            fallbackCopyTextToClipboard(shareText);
+        });
+    } else {
+        fallbackCopyTextToClipboard(shareText);
+    }
+}
+
+// 폴백 클립보드 복사 함수 (구형 브라우저용)
+function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+    textArea.style.opacity = "0";
+    
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            alert('결과가 클립보드에 복사되었습니다!');
+        } else {
+            alert('복사에 실패했습니다. 수동으로 복사해주세요.');
+        }
+    } catch (err) {
+        console.error('폴백 복사 실패:', err);
+        alert('복사에 실패했습니다. 수동으로 복사해주세요.');
+    }
+    
+    document.body.removeChild(textArea);
+}
+
+// 공유용 메타 태그 업데이트 함수
+function updateShareMetaTags(result) {
+    if (!result) return;
+    
+    const score = result.score || '0';
+    
+    // 결과 페이지 공유용 제목과 설명
+    const dynamicTitle = '나의 자취력 점수는?';
+    const dynamicDescription = `나 ${score}점 나왔어! 너는 몇점이야?`;
+    
+    // Open Graph 메타 태그 업데이트
+    updateMetaTag('property', 'og:title', dynamicTitle);
+    updateMetaTag('property', 'og:description', dynamicDescription);
+    
+    // Twitter Cards 메타 태그 업데이트
+    updateMetaTag('name', 'twitter:title', dynamicTitle);
+    updateMetaTag('name', 'twitter:description', dynamicDescription);
+    
+    // 페이지 제목도 업데이트
+    document.title = dynamicTitle;
+}
+
+// 메타 태그 업데이트 헬퍼 함수
+function updateMetaTag(attribute, name, content) {
+    let metaTag = document.querySelector(`meta[${attribute}="${name}"]`);
+    if (!metaTag) {
+        metaTag = document.createElement('meta');
+        metaTag.setAttribute(attribute, name);
+        document.head.appendChild(metaTag);
+    }
+    metaTag.setAttribute('content', content);
 }
 
 // 다시하기

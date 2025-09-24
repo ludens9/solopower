@@ -4,7 +4,7 @@
 30초만에 알아보는 자취생 생활력 테스트! 8가지 질문으로 나의 자취 유형과 점수를 확인해보세요.
 
 ## 📱 웹사이트
-**🔗 [solopower.netlify.app](https://solopower.netlify.app/)**
+**🔗 [ludens9.github.io/solopower](https://ludens9.github.io/solopower/)**
 
 ## 📁 프로젝트 구조
 
