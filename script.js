@@ -312,8 +312,8 @@ function setupImageHoverEffects() {
         // 기존 이벤트 리스너 제거 (중복 방지)
         card.removeEventListener('mouseenter', card._hoverEnter);
         card.removeEventListener('mouseleave', card._hoverLeave);
-        card.removeEventListener('touchstart', card._touchStart);
-        card.removeEventListener('touchend', card._touchEnd);
+        img.removeEventListener('touchstart', img._touchStart);
+        img.removeEventListener('touchend', img._touchEnd);
         
         // 호버 효과 함수
         card._hoverEnter = () => {
@@ -330,10 +330,10 @@ function setupImageHoverEffects() {
             }
         };
         
-        // 터치 효과 함수 (모바일용)
-        card._touchStart = (e) => {
+        // 터치 효과 함수 (모바일용 - 이미지에만 적용)
+        img._touchStart = (e) => {
             if (isTouchDevice()) {
-                e.preventDefault();
+                e.stopPropagation();
                 img.style.transition = 'all 0.5s ease';
                 if (img.dataset.hoverSrc && img.dataset.hoverSrc !== img.src) {
                     img.src = img.dataset.hoverSrc;
@@ -342,8 +342,9 @@ function setupImageHoverEffects() {
             }
         };
         
-        card._touchEnd = (e) => {
+        img._touchEnd = (e) => {
             if (isTouchDevice()) {
+                e.stopPropagation();
                 e.preventDefault();
                 // 0.5초 후 다음 페이지로 이동
                 setTimeout(() => {
@@ -355,11 +356,12 @@ function setupImageHoverEffects() {
         };
         
         if (isTouchDevice()) {
-            // 모바일에서는 터치 이벤트만 사용하고 onclick 비활성화
-            card.style.pointerEvents = 'auto';
+            // 모바일에서는 이미지에만 터치 이벤트 적용하고 카드의 onclick 비활성화
             card.onclick = null;
-            card.addEventListener('touchstart', card._touchStart, { passive: false });
-            card.addEventListener('touchend', card._touchEnd, { passive: false });
+            card.style.pointerEvents = 'none'; // 카드 전체 클릭 비활성화
+            img.style.pointerEvents = 'auto';  // 이미지만 클릭 가능
+            img.addEventListener('touchstart', img._touchStart, { passive: false });
+            img.addEventListener('touchend', img._touchEnd, { passive: false });
         } else {
             // 데스크탑에서는 호버 이벤트 사용
             card.addEventListener('mouseenter', card._hoverEnter);
