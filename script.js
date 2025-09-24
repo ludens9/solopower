@@ -357,27 +357,71 @@ function setupMobileTouchInteraction(card, img) {
     img.style.pointerEvents = 'auto';
     
     // 기존 터치 이벤트 제거
+    img.removeEventListener('touchstart', img._mobileTouchStart);
     img.removeEventListener('touchend', img._mobileTouchEnd);
+    img.removeEventListener('touchmove', img._mobileTouchMove);
+    
+    // 터치 상태 추적 변수
+    img._touchActive = false;
+    img._touchStartY = 0;
+    
+    // 터치 시작 이벤트
+    img._mobileTouchStart = (e) => {
+        img._touchActive = true;
+        img._touchStartY = e.touches[0].clientY;
+    };
+    
+    // 터치 이동 이벤트 (스크롤 감지)
+    img._mobileTouchMove = (e) => {
+        if (!img._touchActive) return;
+        
+        const currentY = e.touches[0].clientY;
+        const deltaY = Math.abs(currentY - img._touchStartY);
+        
+        // 10px 이상 스크롤하면 터치 상태 리셋
+        if (deltaY > 10) {
+            img._touchActive = false;
+            resetSingleImage(img);
+        }
+    };
     
     // 새로운 터치 릴리즈 이벤트
     img._mobileTouchEnd = (e) => {
+        if (!img._touchActive) return;
+        
         e.preventDefault();
         e.stopPropagation();
+        img._touchActive = false;
         
-        // 릴리즈 즉시 스케일링 + 컬러 변경
-        img.style.transition = 'all 0.3s ease';
+        // 릴리즈 즉시 스케일링 + 컬러 변경 (0.1초 안에 완료)
+        img.style.transition = 'all 0.1s ease';
         img.src = img.dataset.hoverSrc;
         img.style.transform = 'scale(1.05)';
         
-        // 0.5초 후 다음 질문으로 이동
+        // 0.1초 후 상태 고정, 0.5초 후 다음 질문으로 이동
+        setTimeout(() => {
+            img.style.transition = 'none'; // 상태 고정
+        }, 100);
+        
         setTimeout(() => {
             const options = card.parentElement.querySelectorAll('.option-card');
             const side = card === options[0] ? 'left' : 'right';
             selectOption(side);
-        }, 500);
+        }, 600); // 0.1초 애니메이션 + 0.5초 유지
     };
     
+    img.addEventListener('touchstart', img._mobileTouchStart, { passive: false });
+    img.addEventListener('touchmove', img._mobileTouchMove, { passive: false });
     img.addEventListener('touchend', img._mobileTouchEnd, { passive: false });
+}
+
+// 단일 이미지 리셋 함수
+function resetSingleImage(img) {
+    if (img.dataset.originalSrc) {
+        img.style.transition = 'all 0.1s ease';
+        img.src = img.dataset.originalSrc;
+        img.style.transform = 'scale(1)';
+    }
 }
 
 // 이미지 영역 리셋 함수
