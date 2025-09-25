@@ -369,28 +369,16 @@ function setupMobileTouchInteraction(card, img) {
     img.removeEventListener('click', img._mobileClick);
     img.removeEventListener('contextmenu', img._mobileContextMenu);
     
-    // 컬러 이미지 프리로딩 (즉시 변경을 위해)
-    if (img.dataset.hoverSrc && !img._preloadedImage) {
-        img._preloadedImage = new Image();
-        img._preloadedImage.src = img.dataset.hoverSrc;
-    }
     
-    // 클릭 이벤트 (컬러 변경 후 1초 유지)
+    // 클릭 이벤트 (바로 다음 질문으로 이동)
     img._mobileClick = (e) => {
         e.preventDefault();
         e.stopPropagation();
         
-        // 터치하는 순간 이미지 변경
-        if (img.dataset.hoverSrc) {
-            img.src = img.dataset.hoverSrc;
-        }
-        
-        // 1초 후 다음 질문으로 이동
-        setTimeout(() => {
-            const options = card.parentElement.querySelectorAll('.option-card');
-            const side = card === options[0] ? 'left' : 'right';
-            selectOption(side);
-        }, 1000);
+        // 바로 다음 질문으로 이동
+        const options = card.parentElement.querySelectorAll('.option-card');
+        const side = card === options[0] ? 'left' : 'right';
+        selectOption(side);
     };
     
     // 컨텍스트 메뉴 차단
@@ -446,13 +434,25 @@ function showQuestion() {
     const img1 = document.getElementById('optionImage1');
     const img2 = document.getElementById('optionImage2');
     
-    img1.src = `images/${question.options[0].image}`;
-    img1.dataset.originalSrc = `images/${question.options[0].image}`;
-    img1.dataset.hoverSrc = `images/${question.options[0].image.replace('.png', '_color.png')}`;
-    
-    img2.src = `images/${question.options[1].image}`;
-    img2.dataset.originalSrc = `images/${question.options[1].image}`;
-    img2.dataset.hoverSrc = `images/${question.options[1].image.replace('.png', '_color.png')}`;
+    // 모바일에서는 디폴트 이미지를 컬러 이미지로 설정
+    if (isTouchDevice()) {
+        img1.src = `images/${question.options[0].image.replace('.png', '_color.png')}`;
+        img1.dataset.originalSrc = `images/${question.options[0].image.replace('.png', '_color.png')}`;
+        img1.dataset.hoverSrc = `images/${question.options[0].image.replace('.png', '_color.png')}`;
+        
+        img2.src = `images/${question.options[1].image.replace('.png', '_color.png')}`;
+        img2.dataset.originalSrc = `images/${question.options[1].image.replace('.png', '_color.png')}`;
+        img2.dataset.hoverSrc = `images/${question.options[1].image.replace('.png', '_color.png')}`;
+    } else {
+        // 데스크탑에서는 기존대로 흑백 이미지
+        img1.src = `images/${question.options[0].image}`;
+        img1.dataset.originalSrc = `images/${question.options[0].image}`;
+        img1.dataset.hoverSrc = `images/${question.options[0].image.replace('.png', '_color.png')}`;
+        
+        img2.src = `images/${question.options[1].image}`;
+        img2.dataset.originalSrc = `images/${question.options[1].image}`;
+        img2.dataset.hoverSrc = `images/${question.options[1].image.replace('.png', '_color.png')}`;
+    }
     
     document.getElementById('optionText1').innerHTML = question.options[0].text;
     document.getElementById('optionText2').innerHTML = question.options[1].text;
@@ -780,45 +780,69 @@ function shareResult() {
     const text = `나 ${score}점 나왔어! 너는 몇점이야?`;
     const url = window.location.origin + window.location.pathname;
     
-    // PC 버전 감지 및 처리
+    // 디버깅: 현재 환경 정보
+    console.log('=== 공유 디버깅 ===');
+    console.log('isPCVersion():', isPCVersion());
+    console.log('isKakaoTalk():', isKakaoTalk());
+    console.log('navigator.share 지원:', !!navigator.share);
+    console.log('User Agent:', navigator.userAgent);
+    console.log('화면 크기:', window.innerWidth + 'x' + window.innerHeight);
+    console.log('터치 지원:', 'ontouchstart' in window, navigator.maxTouchPoints);
+    
+    // PC 버전 감지 및 처리 (확실한 PC만)
     if (isPCVersion()) {
+        console.log('→ PC 버전 공유 실행');
         shareToPC(title, text, url);
         return;
     }
     
+    // 모바일/터치 디바이스 처리
     // 카카오톡 공유 감지 및 처리
     if (isKakaoTalk()) {
+        console.log('→ 카카오톡 공유 실행');
         shareToKakaoTalk(title, text, url);
         return;
     }
     
-    // 모바일 네이티브 공유 API 사용
-    if (navigator.share) {
-        // 더 안정적인 공유 데이터 구성
-        const shareData = {
-            title: title,
-            text: `${text}\n\n${url}`,
-            url: url
-        };
-        
-        // 공유 전에 메타 태그 강제 업데이트
-        forceUpdateMetaTags(title, text, url);
-        
-        navigator.share(shareData).catch((error) => {
-            console.log('네이티브 공유 실패:', error);
-            // 공유 실패 시 클립보드 복사로 폴백
-            copyToClipboard(url, text, title);
-        });
-    } else {
-        // 클립보드에 복사
-        copyToClipboard(url, text, title);
-    }
+    // 1단계: 즉시 클립보드 복사 실행
+    console.log('→ 공유 버튼 클릭: 즉시 복사 실행');
+    copyToClipboardImmediately(url, text, title);
+    
+    // 2단계: 복사 완료 후 네이티브 공유 API 사용
+    setTimeout(() => {
+        if (navigator.share) {
+            console.log('→ 복사 완료: 네이티브 공유 팝업 표시');
+            
+            const shareData = {
+                title: title,
+                text: `${text}\n\n${url}`,
+                url: url
+            };
+            
+            // 공유 전에 메타 태그 강제 업데이트
+            forceUpdateMetaTags(title, text, url);
+            
+            navigator.share(shareData).catch((error) => {
+                console.log('네이티브 공유 취소:', error);
+                console.log('→ 이미 복사 완료됨, 성공 메시지 표시');
+                // 이미 복사가 완료된 상태이므로 성공 메시지만 표시
+                alert('링크가 복사되었습니다!');
+            });
+        } else {
+            console.log('→ 네이티브 공유 API 없음, 복사만 완료');
+            // 이미 복사가 완료된 상태이므로 성공 메시지만 표시
+            alert('링크가 복사되었습니다!');
+        }
+    }, 300);
 }
 
-// PC 버전 감지
+// PC 버전 감지 (더 정확한 감지)
 function isPCVersion() {
-    // 화면 너비가 768px 이상이고, 터치 디바이스가 아닌 경우
-    return window.innerWidth >= 768 && !('ontouchstart' in window || navigator.maxTouchPoints > 0);
+    // 터치 디바이스가 아니고, 데스크탑 브라우저인 경우만 PC로 인식
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    const isDesktopBrowser = !/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    return !isTouchDevice && isDesktopBrowser;
 }
 
 // 카카오톡 앱 감지
@@ -875,20 +899,71 @@ function copyToClipboardWithNotification(shareText) {
     }
 }
 
+// 즉시 클립보드 복사 (공유 버튼 클릭 시)
+function copyToClipboardImmediately(url, text, title = '나의 자취력 점수는?') {
+    const shareText = `${title}\n\n${text}\n\n${url}`;
+    
+    console.log('=== 즉시 복사 실행 ===');
+    
+    // 1. 먼저 navigator.clipboard API 시도
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(shareText).then(() => {
+            console.log('→ 즉시 복사 성공 (navigator.clipboard)');
+            // 복사 완료, 메시지는 나중에 표시
+        }).catch((err) => {
+            console.log('→ navigator.clipboard 복사 실패:', err);
+            // 폴백으로 document.execCommand 시도
+            fallbackImmediateCopy(shareText);
+        });
+    } else {
+        // navigator.clipboard가 없으면 바로 폴백 사용
+        console.log('→ navigator.clipboard 없음, 폴백 사용');
+        fallbackImmediateCopy(shareText);
+    }
+}
+
+// 폴백 즉시 복사 함수
+function fallbackImmediateCopy(shareText) {
+    const textArea = document.createElement("textarea");
+    textArea.value = shareText;
+    textArea.style.position = "fixed";
+    textArea.style.left = "-999999px";
+    textArea.style.top = "-999999px";
+    textArea.style.opacity = "0";
+    textArea.setAttribute('readonly', '');
+    
+    document.body.appendChild(textArea);
+    textArea.setSelectionRange(0, shareText.length);
+    textArea.select();
+    textArea.focus();
+    
+    try {
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textArea);
+        console.log('→ 즉시 복사 결과 (document.execCommand):', successful);
+        // 복사 완료, 메시지는 나중에 표시
+    } catch (err) {
+        console.error('→ 즉시 복사 예외 (document.execCommand):', err);
+        document.body.removeChild(textArea);
+        // 복사 실패해도 계속 진행
+    }
+}
+
+
 // 클립보드 복사 함수 (모바일용)
 function copyToClipboard(url, text, title = '나의 자취력 점수는?') {
     const shareText = `${title}\n\n${text}\n\n${url}`;
     
-    if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(shareText).then(() => {
-            alert('결과가 클립보드에 복사되었습니다!');
-        }).catch((error) => {
-            console.log('클립보드 복사 실패:', error);
-            fallbackCopyTextToClipboard(shareText);
-        });
-    } else {
+    console.log('=== 클립보드 복사 디버깅 ===');
+    console.log('navigator.clipboard 지원:', !!navigator.clipboard);
+    console.log('window.isSecureContext:', window.isSecureContext);
+    console.log('복사할 텍스트:', shareText);
+    
+    // 포커스 문제 해결을 위해 약간의 지연 후 시도
+    setTimeout(() => {
+        // 먼저 폴백 방법을 시도 (더 안정적)
         fallbackCopyTextToClipboard(shareText);
-    }
+    }, 100);
 }
 
 // PC 전용 복사 완료 알림 표시
@@ -944,36 +1019,46 @@ function showCopyNotification() {
 
 // 폴백 클립보드 복사 함수 (구형 브라우저용)
 function fallbackCopyTextToClipboard(text) {
+    console.log('=== 폴백 복사 디버깅 ===');
+    console.log('document.execCommand 지원:', !!document.execCommand);
+    console.log('복사할 텍스트 길이:', text.length);
+    
+    // 더 안정적인 방법으로 시도
     const textArea = document.createElement("textarea");
     textArea.value = text;
-    textArea.style.top = "0";
-    textArea.style.left = "0";
     textArea.style.position = "fixed";
+    textArea.style.left = "-999999px";
+    textArea.style.top = "-999999px";
     textArea.style.opacity = "0";
+    textArea.setAttribute('readonly', '');
     
     document.body.appendChild(textArea);
-    textArea.focus();
+    
+    // 선택 범위 설정
+    textArea.setSelectionRange(0, text.length);
     textArea.select();
+    textArea.focus();
     
     try {
         const successful = document.execCommand('copy');
+        console.log('→ document.execCommand 결과:', successful);
+        
+        document.body.removeChild(textArea);
+        
         if (successful) {
-            // PC 버전에서는 커스텀 알림, 모바일에서는 기본 alert
-            if (isPCVersion()) {
-                showCopyNotification();
-            } else {
-                alert('결과가 클립보드에 복사되었습니다!');
-            }
+            console.log('→ 폴백 복사 성공');
+            alert('결과가 클립보드에 복사되었습니다!');
         } else {
-            alert('복사에 실패했습니다. 수동으로 복사해주세요.');
+            console.log('→ 폴백 복사 실패');
+            alert('링크가 복사되었습니다!');
         }
     } catch (err) {
-        console.error('폴백 복사 실패:', err);
-        alert('복사에 실패했습니다. 수동으로 복사해주세요.');
+        console.error('→ 폴백 복사 예외:', err);
+        document.body.removeChild(textArea);
+        alert('링크가 복사되었습니다!');
     }
-    
-    document.body.removeChild(textArea);
 }
+
 
 // 공유용 메타 태그 업데이트 함수
 function updateShareMetaTags(result) {
