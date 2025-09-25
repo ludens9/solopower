@@ -349,13 +349,13 @@ function setupDesktopHoverInteraction(card, img) {
     }
 }
 
-// 모바일 터치 인터랙션 설정 (단순화된 버전)
+// 모바일 터치 인터랙션 설정 (단순한 컬러 변경만)
 function setupMobileTouchInteraction(card, img) {
     // 카드의 기본 클릭 이벤트 비활성화
     card.onclick = null;
     card.style.pointerEvents = 'none';
     
-    // 이미지 요소의 기본 동작 비활성화 (간단하게)
+    // 이미지 요소의 기본 동작 비활성화
     img.style.pointerEvents = 'auto';
     img.style.userSelect = 'none';
     img.style.webkitUserSelect = 'none';
@@ -369,17 +369,28 @@ function setupMobileTouchInteraction(card, img) {
     img.removeEventListener('click', img._mobileClick);
     img.removeEventListener('contextmenu', img._mobileContextMenu);
     
-    // 간단한 클릭 이벤트
+    // 컬러 이미지 프리로딩 (즉시 변경을 위해)
+    if (img.dataset.hoverSrc && !img._preloadedImage) {
+        img._preloadedImage = new Image();
+        img._preloadedImage.src = img.dataset.hoverSrc;
+    }
+    
+    // 클릭 이벤트 (컬러 변경 후 1초 유지)
     img._mobileClick = (e) => {
         e.preventDefault();
         e.stopPropagation();
         
-        // 즉시 선택 처리 (애니메이션 없이)
-        const options = card.parentElement.querySelectorAll('.option-card');
-        const side = card === options[0] ? 'left' : 'right';
+        // 터치하는 순간 이미지 변경
+        if (img.dataset.hoverSrc) {
+            img.src = img.dataset.hoverSrc;
+        }
         
-        // 즉시 다음 질문으로 이동
-        selectOption(side);
+        // 1초 후 다음 질문으로 이동
+        setTimeout(() => {
+            const options = card.parentElement.querySelectorAll('.option-card');
+            const side = card === options[0] ? 'left' : 'right';
+            selectOption(side);
+        }, 1000);
     };
     
     // 컨텍스트 메뉴 차단
@@ -389,12 +400,12 @@ function setupMobileTouchInteraction(card, img) {
         return false;
     };
     
-    // 간단한 이벤트 등록
+    // 이벤트 등록
     img.addEventListener('click', img._mobileClick, { passive: false });
     img.addEventListener('contextmenu', img._mobileContextMenu, { passive: false });
 }
 
-// 단일 이미지 리셋 함수 (단순화)
+// 단일 이미지 리셋 함수 (단순 리셋)
 function resetSingleImage(img) {
     if (img.dataset.originalSrc) {
         img.src = img.dataset.originalSrc;
@@ -402,7 +413,7 @@ function resetSingleImage(img) {
     }
 }
 
-// 이미지 영역 리셋 함수 (단순화)
+// 이미지 영역 리셋 함수 (단순 리셋)
 function resetImageAreas() {
     if (!isTouchDevice()) return;
     
