@@ -349,12 +349,21 @@ function setupDesktopHoverInteraction(card, img) {
     }
 }
 
-// 모바일 터치 인터랙션 설정 (새로 구현)
+// 모바일 터치 인터랙션 설정 (카카오톡 호환성 개선)
 function setupMobileTouchInteraction(card, img) {
     // 카드의 기본 클릭 이벤트 비활성화
     card.onclick = null;
     card.style.pointerEvents = 'none';
+    
+    // 이미지 요소의 기본 동작 완전 비활성화
     img.style.pointerEvents = 'auto';
+    img.style.userSelect = 'none';
+    img.style.webkitUserSelect = 'none';
+    img.style.webkitTouchCallout = 'none';
+    img.style.webkitTapHighlightColor = 'transparent';
+    img.draggable = false;
+    img.ondragstart = () => false;
+    img.oncontextmenu = () => false;
     
     // 기존 터치 이벤트 제거
     img.removeEventListener('touchstart', img._mobileTouchStart);
@@ -370,16 +379,24 @@ function setupMobileTouchInteraction(card, img) {
     // 터치 상태 추적 변수
     img._touchActive = false;
     img._touchStartY = 0;
+    img._touchStartTime = 0;
     
     // 터치 시작 이벤트
     img._mobileTouchStart = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
         img._touchActive = true;
         img._touchStartY = e.touches[0].clientY;
+        img._touchStartTime = Date.now();
     };
     
     // 터치 이동 이벤트 (스크롤 감지)
     img._mobileTouchMove = (e) => {
         if (!img._touchActive) return;
+        
+        e.preventDefault();
+        e.stopPropagation();
         
         const currentY = e.touches[0].clientY;
         const deltaY = Math.abs(currentY - img._touchStartY);
@@ -397,7 +414,13 @@ function setupMobileTouchInteraction(card, img) {
         
         e.preventDefault();
         e.stopPropagation();
+        e.stopImmediatePropagation();
+        
         img._touchActive = false;
+        
+        // 터치 시간이 너무 짧으면 무시 (실수 터치 방지)
+        const touchDuration = Date.now() - img._touchStartTime;
+        if (touchDuration < 100) return;
         
         // 릴리즈 즉시 컬러변경 + 스케일링 동시 실행 (0.1초 안에 완료)
         img.style.transition = 'transform 0.1s ease';
@@ -422,9 +445,23 @@ function setupMobileTouchInteraction(card, img) {
         }, 600); // 0.1초 애니메이션 + 0.5초 유지
     };
     
-    img.addEventListener('touchstart', img._mobileTouchStart, { passive: false });
-    img.addEventListener('touchmove', img._mobileTouchMove, { passive: false });
-    img.addEventListener('touchend', img._mobileTouchEnd, { passive: false });
+    // 더 강력한 이벤트 차단을 위해 passive: false와 capture: true 사용
+    img.addEventListener('touchstart', img._mobileTouchStart, { passive: false, capture: true });
+    img.addEventListener('touchmove', img._mobileTouchMove, { passive: false, capture: true });
+    img.addEventListener('touchend', img._mobileTouchEnd, { passive: false, capture: true });
+    
+    // 추가 이벤트 차단
+    img.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+    }, { passive: false, capture: true });
+    
+    img.addEventListener('dragstart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+    }, { passive: false, capture: true });
 }
 
 // 단일 이미지 리셋 함수
@@ -804,13 +841,19 @@ function shareResult() {
     const text = `나 ${score}점 나왔어! 너는 몇점이야?`;
     const url = window.location.origin + window.location.pathname;
     
+    // PC 버전 감지 및 처리
+    if (isPCVersion()) {
+        shareToPC(title, text, url);
+        return;
+    }
+    
     // 카카오톡 공유 감지 및 처리
     if (isKakaoTalk()) {
         shareToKakaoTalk(title, text, url);
         return;
     }
     
-    // 네이티브 공유 API 사용
+    // 모바일 네이티브 공유 API 사용
     if (navigator.share) {
         // 더 안정적인 공유 데이터 구성
         const shareData = {
@@ -833,10 +876,28 @@ function shareResult() {
     }
 }
 
+// PC 버전 감지
+function isPCVersion() {
+    // 화면 너비가 768px 이상이고, 터치 디바이스가 아닌 경우
+    return window.innerWidth >= 768 && !('ontouchstart' in window || navigator.maxTouchPoints > 0);
+}
+
 // 카카오톡 앱 감지
 function isKakaoTalk() {
     const userAgent = navigator.userAgent.toLowerCase();
     return userAgent.includes('kakaotalk') || userAgent.includes('kakao');
+}
+
+// PC 버전 공유 처리
+function shareToPC(title, text, url) {
+    // PC에서는 즉시 클립보드 복사
+    const shareText = `${title}\n\n${text}\n\n${url}`;
+    
+    // 메타 태그 업데이트 (공유 링크 클릭 시 올바른 정보 표시)
+    forceUpdateMetaTags(title, text, url);
+    
+    // 클립보드 복사 실행
+    copyToClipboardWithNotification(shareText);
 }
 
 // 카카오톡 공유 처리
@@ -858,7 +919,24 @@ function shareToKakaoTalk(title, text, url) {
     }
 }
 
-// 클립보드 복사 함수
+// PC 전용 클립보드 복사 함수 (브라우저별 호환성 고려)
+function copyToClipboardWithNotification(shareText) {
+    // 브라우저별 클립보드 복사 시도
+    if (navigator.clipboard && window.isSecureContext) {
+        // 최신 브라우저 (Chrome 66+, Firefox 63+, Safari 13.1+)
+        navigator.clipboard.writeText(shareText).then(() => {
+            showCopyNotification();
+        }).catch((error) => {
+            console.log('Clipboard API 실패:', error);
+            fallbackCopyTextToClipboard(shareText);
+        });
+    } else {
+        // 구형 브라우저 폴백
+        fallbackCopyTextToClipboard(shareText);
+    }
+}
+
+// 클립보드 복사 함수 (모바일용)
 function copyToClipboard(url, text, title = '나의 자취력 점수는?') {
     const shareText = `${title}\n\n${text}\n\n${url}`;
     
@@ -872,6 +950,57 @@ function copyToClipboard(url, text, title = '나의 자취력 점수는?') {
     } else {
         fallbackCopyTextToClipboard(shareText);
     }
+}
+
+// PC 전용 복사 완료 알림 표시
+function showCopyNotification() {
+    // 기존 알림이 있다면 제거
+    const existingNotification = document.getElementById('copy-notification');
+    if (existingNotification) {
+        existingNotification.remove();
+    }
+    
+    // 알림 요소 생성
+    const notification = document.createElement('div');
+    notification.id = 'copy-notification';
+    notification.innerHTML = '복사가 완료되었습니다';
+    
+    // 스타일 적용
+    notification.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 16px 24px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        z-index: 10000;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    `;
+    
+    // DOM에 추가
+    document.body.appendChild(notification);
+    
+    // 페이드 인 애니메이션
+    requestAnimationFrame(() => {
+        notification.style.opacity = '1';
+    });
+    
+    // 2초 후 자동 제거
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 2000);
 }
 
 // 폴백 클립보드 복사 함수 (구형 브라우저용)
@@ -890,7 +1019,12 @@ function fallbackCopyTextToClipboard(text) {
     try {
         const successful = document.execCommand('copy');
         if (successful) {
-            alert('결과가 클립보드에 복사되었습니다!');
+            // PC 버전에서는 커스텀 알림, 모바일에서는 기본 alert
+            if (isPCVersion()) {
+                showCopyNotification();
+            } else {
+                alert('결과가 클립보드에 복사되었습니다!');
+            }
         } else {
             alert('복사에 실패했습니다. 수동으로 복사해주세요.');
         }
