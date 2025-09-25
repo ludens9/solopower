@@ -349,13 +349,13 @@ function setupDesktopHoverInteraction(card, img) {
     }
 }
 
-// 모바일 터치 인터랙션 설정 (카카오톡 호환성 개선)
+// 모바일 터치 인터랙션 설정 (단순화된 버전)
 function setupMobileTouchInteraction(card, img) {
     // 카드의 기본 클릭 이벤트 비활성화
     card.onclick = null;
     card.style.pointerEvents = 'none';
     
-    // 이미지 요소의 기본 동작 완전 비활성화
+    // 이미지 요소의 기본 동작 비활성화 (간단하게)
     img.style.pointerEvents = 'auto';
     img.style.userSelect = 'none';
     img.style.webkitUserSelect = 'none';
@@ -365,122 +365,50 @@ function setupMobileTouchInteraction(card, img) {
     img.ondragstart = () => false;
     img.oncontextmenu = () => false;
     
-    // 기존 터치 이벤트 제거
-    img.removeEventListener('touchstart', img._mobileTouchStart);
-    img.removeEventListener('touchend', img._mobileTouchEnd);
-    img.removeEventListener('touchmove', img._mobileTouchMove);
+    // 기존 이벤트 제거
+    img.removeEventListener('click', img._mobileClick);
+    img.removeEventListener('contextmenu', img._mobileContextMenu);
     
-    // 컬러 이미지 프리로딩 (즉시 변경을 위해)
-    if (img.dataset.hoverSrc && !img._preloadedImage) {
-        img._preloadedImage = new Image();
-        img._preloadedImage.src = img.dataset.hoverSrc;
-    }
-    
-    // 터치 상태 추적 변수
-    img._touchActive = false;
-    img._touchStartY = 0;
-    img._touchStartTime = 0;
-    
-    // 터치 시작 이벤트
-    img._mobileTouchStart = (e) => {
+    // 간단한 클릭 이벤트
+    img._mobileClick = (e) => {
         e.preventDefault();
         e.stopPropagation();
         
-        img._touchActive = true;
-        img._touchStartY = e.touches[0].clientY;
-        img._touchStartTime = Date.now();
+        // 즉시 선택 처리 (애니메이션 없이)
+        const options = card.parentElement.querySelectorAll('.option-card');
+        const side = card === options[0] ? 'left' : 'right';
+        
+        // 즉시 다음 질문으로 이동
+        selectOption(side);
     };
     
-    // 터치 이동 이벤트 (스크롤 감지)
-    img._mobileTouchMove = (e) => {
-        if (!img._touchActive) return;
-        
-        e.preventDefault();
-        e.stopPropagation();
-        
-        const currentY = e.touches[0].clientY;
-        const deltaY = Math.abs(currentY - img._touchStartY);
-        
-        // 10px 이상 스크롤하면 터치 상태 리셋
-        if (deltaY > 10) {
-            img._touchActive = false;
-            resetSingleImage(img);
-        }
-    };
-    
-    // 새로운 터치 릴리즈 이벤트
-    img._mobileTouchEnd = (e) => {
-        if (!img._touchActive) return;
-        
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        
-        img._touchActive = false;
-        
-        // 터치 시간이 너무 짧으면 무시 (실수 터치 방지)
-        const touchDuration = Date.now() - img._touchStartTime;
-        if (touchDuration < 100) return;
-        
-        // 릴리즈 즉시 컬러변경 + 스케일링 동시 실행 (0.1초 안에 완료)
-        img.style.transition = 'transform 0.1s ease';
-        
-        // 컬러 변경과 스케일링을 동시에 실행하기 위해 requestAnimationFrame 사용
-        requestAnimationFrame(() => {
-            // 이미지 변경 (즉시)
-            img.src = img.dataset.hoverSrc;
-            // 스케일링 시작 (0.1초 애니메이션)
-            img.style.transform = 'scale(1.05)';
-        });
-        
-        // 0.1초 후 상태 고정, 0.5초 후 다음 질문으로 이동
-        setTimeout(() => {
-            img.style.transition = 'none'; // 상태 고정
-        }, 100);
-        
-        setTimeout(() => {
-            const options = card.parentElement.querySelectorAll('.option-card');
-            const side = card === options[0] ? 'left' : 'right';
-            selectOption(side);
-        }, 600); // 0.1초 애니메이션 + 0.5초 유지
-    };
-    
-    // 더 강력한 이벤트 차단을 위해 passive: false와 capture: true 사용
-    img.addEventListener('touchstart', img._mobileTouchStart, { passive: false, capture: true });
-    img.addEventListener('touchmove', img._mobileTouchMove, { passive: false, capture: true });
-    img.addEventListener('touchend', img._mobileTouchEnd, { passive: false, capture: true });
-    
-    // 추가 이벤트 차단
-    img.addEventListener('contextmenu', (e) => {
+    // 컨텍스트 메뉴 차단
+    img._mobileContextMenu = (e) => {
         e.preventDefault();
         e.stopPropagation();
         return false;
-    }, { passive: false, capture: true });
+    };
     
-    img.addEventListener('dragstart', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        return false;
-    }, { passive: false, capture: true });
+    // 간단한 이벤트 등록
+    img.addEventListener('click', img._mobileClick, { passive: false });
+    img.addEventListener('contextmenu', img._mobileContextMenu, { passive: false });
 }
 
-// 단일 이미지 리셋 함수
+// 단일 이미지 리셋 함수 (단순화)
 function resetSingleImage(img) {
     if (img.dataset.originalSrc) {
-        img.style.transition = 'all 0.1s ease';
         img.src = img.dataset.originalSrc;
         img.style.transform = 'scale(1)';
     }
 }
 
-// 이미지 영역 리셋 함수
+// 이미지 영역 리셋 함수 (단순화)
 function resetImageAreas() {
     if (!isTouchDevice()) return;
     
     const optionImages = document.querySelectorAll('.option-image');
     optionImages.forEach(img => {
         if (img.dataset.originalSrc) {
-            img.style.transition = 'none';
             img.src = img.dataset.originalSrc;
             img.style.transform = 'scale(1)';
         }
@@ -518,11 +446,11 @@ function showQuestion() {
     document.getElementById('optionText1').innerHTML = question.options[0].text;
     document.getElementById('optionText2').innerHTML = question.options[1].text;
     
-    // 호버 이벤트 추가
-    setupImageHoverEffects();
-    
-    // 현재 호버된 카드가 있다면 강제로 호버 효과 적용 (데스크탑만)
+    // 호버 이벤트 추가 (데스크탑만)
     if (!isTouchDevice()) {
+        setupImageHoverEffects();
+        
+        // 현재 호버된 카드가 있다면 강제로 호버 효과 적용
         setTimeout(() => {
             const optionCards = document.querySelectorAll('.option-card');
             optionCards.forEach(card => {
@@ -533,7 +461,7 @@ function showQuestion() {
                     }
                 }
             });
-        }, 50); // 이미지 로드 후 약간의 지연
+        }, 50);
     }
 }
 
